@@ -1,25 +1,24 @@
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/wait.h>
+#include <stdio.h> //perror
+#include <stdlib.h> // exit, malloc, free, atoi
+#include <unistd.h> // execve, access, pipe, fork, close, dup, dup2
+#include "libft.h" // split strncmp, strcpy, strlen
+#include <fcntl.h> // Distintas flags como O_RDONLY
+#include <sys/types.h> // Tipos como pid_t
+#include <sys/wait.h> // wait y waitpid
 
-void	error_exit(char *msg)
-{
-    perror(msg);
-    exit(1);
+void error_exit(const char *message) {
+    perror(message);
+    exit(EXIT_FAILURE);
 }
 
-int	main(int argc, char *argv[])
-{
-    int		pipe_fd[2];
-    int		infile;
-    int		outfile;
-    pid_t	pid1;
-    pid_t	pid2;
+int main(int argc, char *argv[], char *envp[]) {
+    int infile;
+    int outfile;
+    int pipe_fd[2];
+    pid_t pid1;
+    pid_t pid2;
 
-    if (argc != 5)
-    {
+    if (argc != 5) {
         write(2, "Error: Wrong number of arguments\n", 31);
         return (1);
     }
@@ -37,56 +36,53 @@ int	main(int argc, char *argv[])
     if (pipe(pipe_fd) < 0)
         error_exit("Pipe error");
 
-    // Primer proceso hijo
-    pid1 = fork();
-    if (pid1 < 0)
-        error_exit("Fork error");
-    
-    if (pid1 == 0)
-    {
-        // Proceso hijo 1
-        close(pipe_fd[0]);
-        dup2(infile, STDIN_FILENO);
-        dup2(pipe_fd[1], STDOUT_FILENO);
-        close(pipe_fd[1]);
-        close(infile);
-        
-        if (access(argv[2], X_OK) != 0)
-            error_exit("Command 1 not found or not executable");
-        
-        execve(argv[2], &argv[2], environ);
-        error_exit("Execve error");
+    // Acceder a la variable de entorno PATH
+    char *path = NULL;
+    for (int i = 0; envp[i] != NULL; i++) {
+        if (strncmp(envp[i], "PATH=", 5) == 0) {
+            path = envp[i] + 5;
+            break;
+        }
     }
 
-    // Segundo proceso hijo
-    pid2 = fork();
-    if (pid2 < 0)
-        error_exit("Fork error");
-    
-    if (pid2 == 0)
-    {
-        // Proceso hijo 2
-        close(pipe_fd[1]);
-        dup2(pipe_fd[0], STDIN_FILENO);
-        dup2(outfile, STDOUT_FILENO);
-        close(pipe_fd[0]);
-        close(outfile);
-        
-        if (access(argv[3], X_OK) != 0)
-            error_exit("Command 2 not found or not executable");
-        
-        execve(argv[3], &argv[3], environ);
-        error_exit("Execve error");
+    if (path == NULL) {
+        error_exit("Error getting PATH");
     }
 
-    // Proceso padre
-    close(pipe_fd[0]);
-    close(pipe_fd[1]);
-    close(infile);
-    close(outfile);
-    
-    waitpid(pid1, NULL, 0);
-    waitpid(pid2, NULL, 0);
+    // Dividir PATH en directorios usando ft_split
+    char **dirs = ft_split(path, ':');
+    if (dirs == NULL) {
+        error_exit("Error splitting PATH");
+    }
 
-    return (0);
+    char command_path[1024];
+    int command_found = 0;
+
+    for (int i = 0; dirs[i] != NULL; i++) {
+        snprintf(command_path, sizeof(command_path), "%s/%s", dirs[i], "ls");
+        if (access(command_path, X_OK) == 0) {
+            command_found = 1;
+            break;
+        }
+    }
+
+    // Liberar memoria de ft_split
+    for (int i = 0; dirs[i] != NULL; i++) {
+        free(dirs[i]);
+    }
+    free(dirs);
+
+    if (!command_found) {
+        error_exit("Command not found or not executable");
+    }
+
+    // Preparar argumentos para execve
+    char *ls_args[] = {command_path, NULL};
+
+    // Ejecutar ls usando execve
+    if (execve(command_path, ls_args, envp) == -1) {
+        error_exit("Error executing ls");
+    }
+
+    return 0;
 }
