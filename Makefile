@@ -7,6 +7,12 @@ LIBFT := $(LIBFT_DIR)/libft.a
 CC	:= gcc
 CFLAGS	:= -Wall -Werror -Wextra
 
+#Headers
+HEADERS := -I./libft/include
+
+#Librerias 
+LIBS := -L./libft/ -lft
+
 #Archivos fuente y directorios
 # TODO Uso wildcard por flexibilidad pero la norma obliga a incluir explicitamente. Hay que cambiarlo al final.
 DIR_MANDATORY	:= mandatory
@@ -15,31 +21,25 @@ OBJ_MAN:= ${SRC_MAN:.c=.o}
 DIR_BONUS	:= bonus
 SRC_BONUS	:= $(wildcard $(DIR_BONUS)/*.c)
 OBJ_BONUS:= ${SRC_BONUS:.c=.o}
- #Headers
-HEADERS := -I./libft/include
-
-#Librerias 
-LIBS := -L./libft/
 
 #Reglas de compilación
-
 all: $(NAME)
 
 $(NAME): $(LIBFT) $(OBJ_MAN)
-	$(CC) $(CFLAGS) -o $@ $(OBJ_MAN) $(HEADERS) $(LIBS)
+	$(CC) $(CFLAGS) $(HEADERS) -o $@ $(OBJ_MAN) $(LIBS)
 
 bonus: $(LIBFT_DIR)/Makefile .cache_bonus
 	@touch $(OUTDIR)/.cache_bonus
 
 cache_bonus: $(LIBFT) $(OBJ_BONUS) 
-	$(CC) $(CFLAGS) -o $(NAMe) $(OBJ_BONUS) $(HEADERS) $(LIBS)
+	$(CC) $(CFLAGS) $(HEADERS) -o $(NAME) $(OBJ_BONUS) $(LIBS)
 	
 $(LIBFT):
 	git submodule update --init --recursive
 	make -C $(LIBFT_DIR)
 
 %.o: %.c
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) $(HEADERS) -c $< -o $@
 
 # Limpiar los archivos y el ejecutable
 clean:
