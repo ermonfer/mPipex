@@ -1,0 +1,43 @@
+** open
+	#include <sys/types.h>
+	int open(const char *pathname, int flags);
+	
+	"Abre el archivo con el pathname. Si la flag O_CREAT
+	es incluida puede crear el archivo en caso de no existir.
+	El valor de retorno es un file descriptor, es deicr, un
+	número no negativo que es usado por otras llamadas del
+	sistema para referirse al open file. En caso de que la
+	llamada haya sido exitosa el file descriptor será el más
+	pequeño que no este en uso por el proceso.
+	
+	A no ser que la flag O_cloexec sea introducida el file
+	descriptor permanecera abierto en una llamada a la syscall
+	evecve"
+
+** close
+** read
+** write
+
+** perror
+** strerror
+
+** access
+** dup
+** dup2
+** execve
+** exit
+** fork
+** pipe
+** unlink
+** wait
+** wait pid
+
+./pipex archivo1 comando1 comando2 archivo2
+
+Debe ser equivalente a
+
+$> < archivo1 comando1  | comando2 > archivo2
+
+Donde comando1 y comando2 son comando de la shell con sus propios parámetros.
+
+Bonus. Gestionar multiples pipes. Aceptar << y >> cuando el primer parámetro es here+doc
